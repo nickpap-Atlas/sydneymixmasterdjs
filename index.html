@@ -1215,32 +1215,30 @@
 async function submitBooking(e) {
   e.preventDefault();
   const form = e.target;
-  const data = {
-    name: form.name?.value || '',
-    email: form.email?.value || '',
-    phone: form.phone?.value || '',
-    event_date: form.event_date?.value || '',
-    event_type: form.event_type?.value || '',
-    venue: form.venue?.value || '',
-    message: form.message?.value || '',
-    created_at: new Date().toISOString()
-  };
+  const btn = form.querySelector('button[type=submit]');
+  const formData = new FormData(form);
+
+  // Add hidden field for Formspree redirect
+  formData.append('_next', 'https://sydneymixmasterdjs.com.au/book');
+
   try {
-    const res = await fetch('https://ygjhbiwvpgyxdiqseyls.supabase.co/rest/v1/dj_enquiries', {
+    if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+
+    const res = await fetch('https://formspree.io/f/mgorbdgz', {
       method: 'POST',
-      headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnamhiaXd2cGd5eGRpcXNleWxzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDk4MDEsImV4cCI6MjA5MjAyNTgwMX0.gDwnaO7wkAx5w1q7-cmL9C0lYrVoq_7caALTVZ0x6X0',
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(data)
+      headers: { 'Accept': 'application/json' },
+      body: formData
     });
+
     if (res.ok) {
-      const btn = form.querySelector('button[type=submit]');
-      if (btn) { btn.textContent = "Enquiry sent — we'll be in touch!"; btn.disabled = true; }
-      form.reset();
+      window.location.href = 'https://sydneymixmasterdjs.com.au/book';
+    } else {
+      if (btn) { btn.textContent = 'Something went wrong — please try again'; btn.disabled = false; }
     }
-  } catch(err) { console.error('Submit error', err); }
+  } catch(err) {
+    console.error('Submit error', err);
+    if (btn) { btn.textContent = 'Something went wrong — please try again'; btn.disabled = false; }
+  }
 }
 </script>
 </body>
