@@ -1464,64 +1464,60 @@ function getSpecialRequests() {
 }
 
 // ─── Submit ────────────────────────────────────────────────────────────────────
-async function submitForm() {
+function submitForm() {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span> Submitting...`;
 
   const clientName = getVal('client_name');
-  const email = getVal('email');
-
   const songs = collectSongs();
   const eventSpecific = collectEventSpecific();
 
-  const payload = {
-    event_type: selectedEventType,
-    client_name: clientName,
-    email: email,
-    mobile: getVal('mobile'),
-    event_date: getVal('event_date') || null,
-    start_time: getVal('start_time'),
-    venue_name: getVal('venue_name'),
-    venue_address: getVal('venue_address'),
-    guest_count: parseInt(getVal('guest_count')) || null,
-    referral_source: getVal('referral_source'),
-    song_selections: { ...songs, event_specific: eventSpecific },
+  // Build a hidden form and POST it — standard form POST works on Formspree free plan
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = 'https://formspree.io/f/mgorbdgz';
+
+  const fields = {
+    _subject:             `New ${selectedEventType} booking — ${clientName}`,
+    _next:                window.location.origin + window.location.pathname + '?submitted=1',
+    event_type:           selectedEventType,
+    client_name:          clientName,
+    email:                getVal('email'),
+    mobile:               getVal('mobile'),
+    event_date:           getVal('event_date'),
+    start_time:           getVal('start_time'),
+    venue_name:           getVal('venue_name'),
+    venue_address:        getVal('venue_address'),
+    guest_count:          getVal('guest_count'),
+    referral_source:      getVal('referral_source'),
+    song_selections:      JSON.stringify({ ...songs, event_specific: eventSpecific }),
     spotify_playlist_url: getPlaylistUrl(),
-    special_requests: getSpecialRequests(),
-    status: 'new'
+    special_requests:     getSpecialRequests()
   };
 
-  try {
-    const res = await fetch('https://formspree.io/f/mgorbdgz', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+  Object.entries(fields).forEach(([name, value]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value || '';
+    form.appendChild(input);
+  });
 
-    const data = await res.json();
+  document.body.appendChild(form);
+  form.submit();
+}
 
-    if (!res.ok || data.errors) {
-      const msg = data.errors ? data.errors.map(e => e.message).join(', ') : `Error ${res.status}`;
-      throw new Error(msg);
-    }
-
-    // Show success
+// ─── Show success screen on return from Formspree redirect ─────────────────────
+if (new URLSearchParams(window.location.search).get('submitted') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
     document.getElementById('progress-bar').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';
     document.getElementById('success-msg').textContent =
-      `Thanks ${clientName}! We'll be in touch within 24 hours to confirm your booking. Check your inbox for a confirmation email.`;
+      `Thanks! We'll be in touch within 24 hours to confirm your booking. Check your inbox for a confirmation email.`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    document.querySelectorAll('#progress-bar .progress-step').forEach(s => s.classList.add('done'));
-
-  } catch(err) {
-    btn.disabled = false;
-    btn.innerHTML = 'Submit Booking Request ✓';
-    const errDiv = document.getElementById('submit-error');
-    errDiv.textContent = `Something went wrong — please try again or call 0449 104 378. (${err.message})`;
-    errDiv.style.display = 'block';
-  }
+  });
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
