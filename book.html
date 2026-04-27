@@ -1003,6 +1003,7 @@
       </div>
     </div>
 
+    <div id="submit-error" style="display:none;color:var(--danger);font-size:14px;margin-bottom:12px;padding:10px 14px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.3);border-radius:8px;"></div>
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
       <button class="btn btn-primary" id="submit-btn" onclick="submitForm()">
@@ -1492,57 +1493,34 @@ async function submitForm() {
   };
 
   try {
-    // Save to Supabase
-    const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/dj_bookings`, {
+    const res = await fetch('https://formspree.io/f/mgorbdgz', {
       method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(payload)
     });
 
-    if (!dbRes.ok) {
-      const errText = await dbRes.text();
-      throw new Error(`Supabase error: ${errText}`);
+    const data = await res.json();
+
+    if (!res.ok || data.errors) {
+      const msg = data.errors ? data.errors.map(e => e.message).join(', ') : `Error ${res.status}`;
+      throw new Error(msg);
     }
 
-    // Send confirmation email via server-side API (key stored server-side)
-    try {
-      await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to_email: email,
-          to_name: clientName,
-          event_type: selectedEventType,
-          event_date: getVal('event_date'),
-          venue_name: getVal('venue_name'),
-          guest_count: getVal('guest_count')
-        })
-      });
-    } catch(emailErr) {
-      // Email failure is non-fatal — booking is saved in Supabase
-      console.warn('Email send issue:', emailErr.message);
-    }
-
-        // Show success
+    // Show success
     document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
     document.getElementById('progress-bar').style.display = 'none';
     document.getElementById('success-screen').style.display = 'block';
     document.getElementById('success-msg').textContent =
       `Thanks ${clientName}! We'll be in touch within 24 hours to confirm your booking. Check your inbox for a confirmation email.`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Mark step 4 done
     document.querySelectorAll('#progress-bar .progress-step').forEach(s => s.classList.add('done'));
 
   } catch(err) {
     btn.disabled = false;
     btn.innerHTML = 'Submit Booking Request ✓';
-    alert('Something went wrong: ' + err.message + '\n\nPlease try again or call 0449 104 378.');
+    const errDiv = document.getElementById('submit-error');
+    errDiv.textContent = `Something went wrong — please try again or call 0449 104 378. (${err.message})`;
+    errDiv.style.display = 'block';
   }
 }
 </script>
