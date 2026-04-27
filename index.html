@@ -1125,8 +1125,9 @@
         </div>
       </div>
       <div>
-        <form class="booking-form" name="enquiry" onsubmit="submitBooking(event)">
-          
+        <form class="booking-form" action="https://formspree.io/f/mgorbdgz" method="POST">
+          <input type="hidden" name="_subject" value="New DJ Enquiry — sydneymixmasterdjs.com.au">
+          <input type="hidden" name="_next" value="https://sydneymixmasterdjs.com.au/book">
           <div class="form-row">
             <div class="form-field">
               <input type="text" name="name" placeholder=" " id="fname">
@@ -1176,26 +1177,6 @@
   </div>
 </section>
 
-<script>
-  const bookingForm = document.querySelector('.booking-form');
-  if (bookingForm) {
-    bookingForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const data = new FormData(bookingForm);
-      fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(data).toString()
-      }).then(() => {
-        bookingForm.style.display = 'none';
-        document.getElementById('form-success').style.display = 'block';
-      }).catch(() => {
-        alert('Something went wrong. Please email sydneymixmasterdjs@gmail.com directly.');
-      });
-    });
-  }
-</script>
-
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">Nick <em>Pap</em></div>
@@ -1211,35 +1192,5 @@
   <div class="footer-copy">© 2025 Sydney Mix Master DJs. All rights reserved.</div>
 </footer>
 
-<script>
-async function submitBooking(e) {
-  e.preventDefault();
-  const form = e.target;
-  const btn = form.querySelector('button[type=submit]');
-  const formData = new FormData(form);
-
-  // Add hidden field for Formspree redirect
-  formData.append('_next', 'https://sydneymixmasterdjs.com.au/book');
-
-  try {
-    if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
-
-    const res = await fetch('https://formspree.io/f/mgorbdgz', {
-      method: 'POST',
-      headers: { 'Accept': 'application/json' },
-      body: formData
-    });
-
-    if (res.ok) {
-      window.location.href = 'https://sydneymixmasterdjs.com.au/book';
-    } else {
-      if (btn) { btn.textContent = 'Something went wrong — please try again'; btn.disabled = false; }
-    }
-  } catch(err) {
-    console.error('Submit error', err);
-    if (btn) { btn.textContent = 'Something went wrong — please try again'; btn.disabled = false; }
-  }
-}
-</script>
 </body>
 </html>
